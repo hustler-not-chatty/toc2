@@ -60,11 +60,13 @@ class PlayerService : LifecycleService() {
             field = newBpm
             statusChangedListeners.forEach {s -> s.onSpeedChanged(field)}
 
-            val duration = computeNoteDurationInSeconds(field)
-            for(i in noteList.indices) {
-                noteList[i].duration = duration
-            }
-            audioMixer?.noteList = noteList
+//            val duration = computeNoteDurationInSeconds(field)
+//            for(i in noteList.indices) {
+//                noteList[i].duration = duration
+//            }
+
+            audioMixer?.setBpmQuarter(field)
+//            audioMixer?.noteList = noteList
 
             notification?.bpm = field
             notification?.postNotificationUpdate()
@@ -89,9 +91,9 @@ class PlayerService : LifecycleService() {
     var noteList = ArrayList<NoteListItem>()
         set(value) {
             deepCopyNoteList(value, field)
-            val duration = computeNoteDurationInSeconds(bpm)
-            for(i in field.indices)
-                field[i].duration = duration
+//            val duration = computeNoteDurationInSeconds(bpm)
+//            for(i in field.indices)
+//                field[i].duration = duration
             audioMixer?.noteList = field
             for (s in statusChangedListeners)
                 s.onNoteListChanged(field)
@@ -155,6 +157,7 @@ class PlayerService : LifecycleService() {
         }
 
         audioMixer = AudioMixer(applicationContext, lifecycleScope)
+        audioMixer?.setBpmQuarter(bpm)
         audioMixer?.noteList = noteList
 
         // callback for ui stuff
@@ -174,7 +177,7 @@ class PlayerService : LifecycleService() {
                 withContext(Dispatchers.Default) {
                     if (noteListItem != null) {
                         if (getNoteVibrationDuration(noteListItem.id) > 0L)
-                            vibrator?.vibrate(noteListItem.volume, noteListItem)
+                            vibrator?.vibrate(noteListItem.volume, noteListItem, bpm)
                     }
                 }
             }
@@ -279,7 +282,7 @@ class PlayerService : LifecycleService() {
     }
 
     private fun computeNoteDurationInSeconds(bpm: Float) : Float {
-        return Utilities.bpm2ms(bpm) / 1000.0f
+        return Utilities.bpm2millis(bpm) / 1000.0f
     }
 
     fun addValueToBpm(bpmDiff : Float) {
